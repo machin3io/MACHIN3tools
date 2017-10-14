@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from .. import M3utils as m3
 from .. import developer_utils as du
-
+from math import pow
 
 # TODO: ShadingSwitch() must call prepare_for_viewport_shading() when switching from solid to material shading
 
@@ -145,26 +145,32 @@ def reset_principledpbr_node(mode, material, node, group=None):
             groupname = group.node_tree.name
             if "Subset" in groupname:
                 if node.name == "Principled BSDF":
+                    color = group.inputs['Material Color'].links[0].from_socket
                     metallic = group.inputs['Material Metallic']
                     roughness = group.inputs['Material Roughness']
                 elif node.name == "Principled BSDF.001":
+                    color = group.inputs['Subset Color'].links[0].from_socket
                     metallic = group.inputs['Subset Metallic']
                     roughness = group.inputs['Subset Roughness']
 
             elif "Panel" in groupname:
                 if node.name == "Principled BSDF":
+                    color = group.inputs['Material 1 Color'].links[0].from_socket
                     metallic = group.inputs['Material 1 Metallic']
                     roughness = group.inputs['Material 1 Roughness']
                 elif node.name == "Principled BSDF.001":
+                    color = group.inputs['Material 2 Color'].links[0].from_socket
                     metallic = group.inputs['Material 2 Metallic']
                     roughness = group.inputs['Material 2 Roughness']
 
             elif "Info" in groupname:
+                color = group.inputs['Info Color']
                 metallic = group.inputs['Info Metallic']
                 roughness = group.inputs['Info Roughness']
 
             # Subtractors have either 'Subtractor' in the group name or are just called 'Decal Group'
             else:
+                color = group.inputs['Material Color'].links[0].from_socket
                 metallic = group.inputs['Material Metallic']
                 roughness = group.inputs['Material Roughness']
 
@@ -176,9 +182,11 @@ def reset_principledpbr_node(mode, material, node, group=None):
         else:
             metallic = node.inputs[4]
             roughness = node.inputs[7]
+            color = node.inputs[0]
 
         metallic.default_value = node["M3"]["metallic"]
         roughness.default_value = node["M3"]["roughness"]
+        color.default_value = node["M3"]["color"]
 
         del node["M3"]
 
@@ -250,6 +258,7 @@ def adjust_principledpbr_node(mode, material, node, group=None):
     targetmetallic = m3.M3_prefs().targetmetallic
     secondarytargetmetallic = m3.M3_prefs().secondarytargetmetallic
     targetroughness = m3.M3_prefs().targetroughness
+    targetcolor = m3.M3_prefs().targetcolor
     alphafix = m3.M3_prefs().alphafix
 
     # get render parameters
@@ -307,6 +316,7 @@ def adjust_principledpbr_node(mode, material, node, group=None):
     if mode == "278":  # this mode mirrors the look in 2.78, very rough and without metallic darkening
         metallic.default_value = 0.5
         roughness.default_value = 1
+        color.default_value = (.8,.8,.8)
     elif mode == "279":  # this mode lerps between render values and target values based on the metallic amount and color average
 
         if "Info" in groupname:
@@ -314,6 +324,9 @@ def adjust_principledpbr_node(mode, material, node, group=None):
             roughness.default_value = m3.lerp(roughness.default_value, targetroughness, metallic.default_value)
         else:
             coloravg = (color.default_value[0] + color.default_value[1] + color.default_value[2]) / 3
+            color.default_value = (pow(color.default_value[0],1-targetcolor), #brighten color
+                                   pow(color.default_value[0], 1-targetcolor),
+                                   pow(color.default_value[0], 1-targetcolor),color.default_value[3])
 
             metallic.default_value = m3.lerp(m3.lerp(metallic.default_value, targetmetallic, metallic.default_value), secondarytargetmetallic, coloravg)
             roughness.default_value = m3.lerp(roughness.default_value, targetroughness, metallic.default_value)

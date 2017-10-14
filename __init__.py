@@ -30,7 +30,7 @@ bl_info = {
 
 
 import bpy
-from bpy.props import BoolProperty, EnumProperty, FloatProperty
+from bpy.props import BoolProperty, EnumProperty, FloatProperty,FloatVectorProperty
 from . import developer_utils as du
 from . import M3utils as m3
 
@@ -122,6 +122,7 @@ class MACHIN3Preferences(bpy.types.AddonPreferences):
     targetmetallic = FloatProperty(name="Target Metallic", description="Interpolation Target Metallic Value for Full Metallness", default=0.9, min=0, max=1)
     secondarytargetmetallic = FloatProperty(name="2nd Target Metallic", description="Interpolation Target Metallic Value for Secondary Color Based Adjustment", default=0.1, min=0, max=1)
     targetroughness = FloatProperty(name="Target Roughness", description="Interpolation Target Roughness Value for full Metallness", default=0.6, min=0, max=1)
+    targetcolor = FloatProperty(name = "Brighten Color", description = "Brighten color", default = 0.6, min = 0, max = 0.8) #like gamma
 
     alphafix = BoolProperty(name="Fix white Decal borders in Viewport", default=True)
 
@@ -422,6 +423,7 @@ class MACHIN3Preferences(bpy.types.AddonPreferences):
                         row.prop(self, "targetmetallic")
                         row.prop(self, "secondarytargetmetallic")
                         row.prop(self, "targetroughness")
+                        row.prop(self, "targetcolor")
                         column.prop(self, "alphafix")
 
                 column.separator()
