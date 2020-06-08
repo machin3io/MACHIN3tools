@@ -11,6 +11,7 @@ class QuadSphere(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     subdivisions: IntProperty(name='Subdivisions', default=4, min=1, max=8)
+    shade_smooth: BoolProperty(name="Shade Smooth", default=True)
 
     align_rotation: BoolProperty(name="Align Rotation", default=True)
 
@@ -21,6 +22,7 @@ class QuadSphere(bpy.types.Operator):
 
         row = column.row(align=True)
         row.prop(self, "subdivisions")
+        row.prop(self, "shade_smooth", toggle=True)
         row.prop(self, "align_rotation", toggle=True)
 
     @classmethod
@@ -29,6 +31,9 @@ class QuadSphere(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.mesh.primitive_cube_add(align='CURSOR' if self.align_rotation else 'WORLD')
+
+        if self.shade_smooth:
+            bpy.ops.object.shade_smooth()
 
         mode = bpy.context.mode
 

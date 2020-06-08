@@ -62,7 +62,7 @@ class PieModes(Menu):
                             pie.operator("machin3.mesh_mode", text="Face", icon_value=get_icon('face')).mode = 'FACE'
 
                             # 2 - BOTTOM
-                            pie.operator("machin3.mesh_mode", text="Edge", icon_value=get_icon('face')).mode = 'EDGE'
+                            pie.operator("machin3.mesh_mode", text="Edge", icon_value=get_icon('edge')).mode = 'EDGE'
 
                             # 8 - TOP
                             if context.mode == 'OBJECT' and grouppro and len(context.scene.storedGroupSettings):
@@ -615,8 +615,7 @@ class PieSave(Menu):
         # box = pie.box().split()
 
         b = box.box()
-        column = b.column()
-        self.draw_left_column(column)
+        self.draw_left_column(b)
 
         column = box.column()
         b = column.box()
@@ -627,8 +626,7 @@ class PieSave(Menu):
             self.draw_center_column_bottom(b)
 
         b = box.box()
-        column = b.column()
-        self.draw_right_column(column)
+        self.draw_right_column(b)
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -642,49 +640,56 @@ class PieSave(Menu):
         # 3 - BOTTOM - RIGHT
         pie.operator("machin3.save_incremental", text="Incremental Save", icon_value=get_icon('save_incremental'))
 
-    def draw_left_column(self, col):
-        col.scale_x = 1.1
+    def draw_left_column(self, layout):
+        column = layout.column(align=True)
 
-        row = col.row(align=True)
-        row.scale_y = 1.5
+        column.scale_x = 1.1
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
         row.operator("machin3.load_most_recent", text="(R) Most Recent", icon_value=get_icon('open_recent'))
         # row.operator("wm.call_menu", text="All Recent", icon_value=get_icon('open_recent')).name = "INFO_MT_file_open_recent"
         row.operator("wm.call_menu", text="All Recent", icon_value=get_icon('open_recent')).name = "TOPBAR_MT_file_open_recent"
 
-        col.separator()
-        col.operator("wm.recover_auto_save", text="Recover Auto Save...", icon_value=get_icon('recover_auto_save'))
+        column.separator()
+        column.operator("wm.recover_auto_save", text="Recover Auto Save...", icon_value=get_icon('recover_auto_save'))
         # col.operator("wm.recover_last_session", text="Recover Last Session", icon='RECOVER_LAST')
-        col.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
+        column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
 
-    def draw_center_column_top(self, context, col):
-        row = col.split(factor=0.25)
+    def draw_center_column_top(self, context, layout):
+        column = layout.column(align=True)
+
+        row = column.split(factor=0.25, align=True)
         row.label(text="OBJ")
         r = row.row(align=True)
         r.operator("import_scene.obj", text="Import", icon_value=get_icon('import'))
         r.operator("export_scene.obj", text="Export", icon_value=get_icon('export')).use_selection = True if context.selected_objects else False
 
-        row = col.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.label(text="FBX")
         r = row.row(align=True)
         r.operator("import_scene.fbx", text="Import", icon_value=get_icon('import'))
         r.operator("export_scene.fbx", text="Export", icon_value=get_icon('export')).use_selection = True if context.selected_objects else False
 
-    def draw_center_column_bottom(self, col):
-        row = col.split(factor=0.5)
-        row.scale_y = 1.25
+    def draw_center_column_bottom(self, layout):
+        column = layout.column(align=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.scale_y = 1.2
         row.operator("machin3.load_previous", text="Previous", icon_value=get_icon('open_previous'))
         row.operator("machin3.load_next", text="Next", icon_value=get_icon('open_next'))
 
-    def draw_right_column(self, col):
-        row = col.row()
+    def draw_right_column(self, layout):
+        column = layout.column(align=True)
+
+        row = column.row()
         r = row.row(align=True)
         r.operator("wm.append", text="Append", icon_value=get_icon('append'))
         r.operator("wm.link", text="Link", icon_value=get_icon('link'))
 
         r = row.row(align=True)
-        r.operator("wm.call_menu", text="", icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
-        # r.operator_context = 'INVOKE_AREA'
-        r.operator("outliner.orphans_purge", text="Purge")
+        r.operator("wm.call_menu", text='', icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
+        r.operator("machin3.purge_orphans", text="Purge")
 
         # append world and materials
 
@@ -692,17 +697,17 @@ class PieSave(Menu):
         appendmatspath = get_prefs().appendmatspath
 
         if any([appendworldpath, appendmatspath]):
-            col.separator()
+            column.separator()
 
             if appendworldpath:
-                row = col.split(factor=0.8)
-                row.scale_y = 1.5
+                row = column.split(factor=0.8, align=True)
+                row.scale_y = 1.2
                 row.operator("machin3.append_world", text="World", icon_value=get_icon('world'))
                 row.operator("machin3.load_world_source", text="", icon_value=get_icon('open_world'))
 
             if appendmatspath:
-                row = col.split(factor=0.8)
-                row.scale_y = 1.5
+                row = column.split(factor=0.8, align=True)
+                row.scale_y = 1.2
                 row.operator("wm.call_menu", text="Material", icon_value=get_icon('material')).name = "MACHIN3_MT_append_materials"
                 row.operator("machin3.load_materials_source", text="", icon_value=get_icon('open_material'))
 
@@ -715,16 +720,20 @@ class PieShading(Menu):
         layout = self.layout
 
         view = context.space_data
+        active = context.active_object
+
+        overlay = view.overlay
+        shading = view.shading
 
         pie = layout.menu_pie()
 
         # 4 - LEFT
         text, icon = self.get_text_icon(context, "SOLID")
-        pie.operator("machin3.shade_solid", text=text, icon=icon)
+        pie.operator("machin3.shade_solid", text=text, icon=icon, depress=shading.type == 'SOLID' and overlay.show_overlays)
 
         # 6 - RIGHT
         text, icon = self.get_text_icon(context, "MATERIAL")
-        pie.operator("machin3.shade_material", text=text, icon=icon)
+        pie.operator("machin3.shade_material", text=text, icon=icon, depress=shading.type == 'MATERIAL' and overlay.show_overlays)
 
         # 2 - BOTTOM
         pie.separator()
@@ -732,21 +741,38 @@ class PieShading(Menu):
         # 8 - TOP
         box = pie.split()
 
-        b = box.box()
-        column = b.column()
-        self.draw_left_column(context, view, column)
-
-        b = box.box()
-        column = b.column()
-        self.draw_center_column(context, view, column)
-
-        b = box.box()
-        column = b.column()
-        self.draw_right_column(context, view, column)
-
-        if view.shading.type == "MATERIAL":
+        if (active and active.select_get()) or context.mode == 'EDIT_MESH':
             b = box.box()
-            self.draw_eevee(context, view, b)
+            self.draw_object_box(active, view, b)
+
+
+        if overlay.show_overlays and shading.type == 'SOLID':
+            column = box.column()
+            b = column.box()
+            self.draw_overlay_box(context, view, b)
+
+            b = column.box()
+            self.draw_solid_box(context, view, b)
+
+        elif overlay.show_overlays:
+            b = box.box()
+            self.draw_overlay_box(context, view, b)
+
+        elif shading.type == 'SOLID':
+            b = box.box()
+            self.draw_solid_box(context, view, b)
+
+
+        b = box.box()
+        self.draw_shade_box(context, view, b)
+
+        if view.shading.type == "MATERIAL" or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE'):
+            b = box.box()
+            self.draw_eevee_box(context, view, b)
+
+        elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
+            b = box.box()
+            self.draw_cycles_box(context, view, b)
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -756,221 +782,321 @@ class PieShading(Menu):
 
         # 1 - BOTTOM - LEFT
         text, icon = self.get_text_icon(context, "WIREFRAME")
-        pie.operator("machin3.shade_wire", text=text, icon=icon)
+        pie.operator("machin3.shade_wire", text=text, icon=icon, depress=shading.type == 'WIREFRAME' and overlay.show_overlays)
 
         # 3 - BOTTOM - RIGHT
         text, icon = self.get_text_icon(context, "RENDERED")
-        pie.operator("machin3.shade_rendered", text=text, icon=icon)
+        pie.operator("machin3.shade_rendered", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays)
 
-    def draw_left_column(self, context, view, col):
-        row = col.split(factor=0.45)
-        row.operator("machin3.toggle_grid", text="Grid Toggle", icon="GRID")
-        r = row.split().row(align=True)
+    def draw_overlay_box(self, context, view, layout):
+        overlay = context.space_data.overlay
+        perspective_type = view.region_3d.view_perspective
+
+        column = layout.column(align=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(view.overlay, "show_cursor", text="3D Cursor")
+        r = row.row(align=True)
+        r.prop(view.overlay, "show_object_origins", text="Origins")
+
+        rr = r.row(align=True)
+        rr.active = view.overlay.show_object_origins
+        rr.prop(view.overlay, "show_object_origins_all", text="All")
+
+        if view.shading.type == 'SOLID' and view.overlay.show_overlays:
+            row = column.split(factor=0.5, align=True)
+            row.prop(view.shading, "show_backface_culling")
+            row.prop(view.overlay, "show_relationship_lines")
+
+        elif view.shading.type == 'SOLID':
+            row = column.row(align=True)
+            row.prop(view.shading, "show_backface_culling")
+
+        elif view.overlay.show_overlays:
+            row = column.row(align=True)
+            row.prop(view.overlay, "show_relationship_lines")
+
+        if view.overlay.show_overlays:
+            if context.mode == 'EDIT_MESH':
+                row = column.split(factor=0.5, align=True)
+                row.prop(view.overlay, "show_face_orientation")
+                row.prop(view.overlay, "show_extra_indices")
+            else:
+                row = column.row(align=True)
+                row.prop(view.overlay, "show_face_orientation")
+
+        column.separator()
+
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_grid", text="Grid", icon="GRID", depress=overlay.show_ortho_grid if perspective_type == 'ORTHO' and view.region_3d.is_orthographic_side_view else overlay.show_floor)
+        r = row.row(align=True)
         r.active = view.overlay.show_floor
         r.prop(view.overlay, "show_axis_x", text="X", toggle=True)
         r.prop(view.overlay, "show_axis_y", text="Y", toggle=True)
         r.prop(view.overlay, "show_axis_z", text="Z", toggle=True)
 
-        # col.separator()
-        row = col.split(factor=0.45)
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_wireframe", text="Wireframe", icon_value=get_icon('wireframe'), depress=context.mode=='OBJECT' and overlay.show_wireframes)
 
-        icon = get_icon('wireframe_overlay') if view.overlay.show_wireframes else get_icon('wireframe')
-        row.operator("machin3.toggle_wireframe", text="Wire Toggle", icon_value=icon)
-
-        # TODO: use depress argument, see https://blenderartists.org/t/machin3tools/1135716/398
-
-        r = row.split().row()
+        r = row.row(align=True)
         if context.mode == "OBJECT":
             r.active = view.overlay.show_wireframes
-            r.prop(view.overlay, "wireframe_threshold", text="Wireframe")
+            r.prop(view.overlay, "wireframe_threshold", text="Threshold")
         elif context.mode == "EDIT_MESH":
             r.active = view.shading.show_xray
             r.prop(view.shading, "xray_alpha", text="X-Ray")
 
-        row = col.split(factor=0.45)
-        row.operator("machin3.toggle_outline", text="(Q) Outline Toggle")
+        # object axes
+        hasobjectaxes = True if bpy.app.driver_namespace.get('draw_object_axes') else False
+
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_object_axes", text="(E) Object Axes", depress=hasobjectaxes)
+        r = row.row(align=True)
+        r.active = hasobjectaxes
+        r.prop(context.scene.M3, "object_axes_size", text="")
+        r.prop(context.scene.M3, "object_axes_alpha", text="")
+
+    def draw_solid_box(self, context, view, layout):
+        shading = context.space_data.shading
+
+        column = layout.column(align=True)
+
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_outline", text="(Q) Outline", depress=shading.show_object_outline)
         row.prop(view.shading, "object_outline_color", text="")
 
         # cavity
+        hascavity = view.shading.show_cavity and view.shading.cavity_type in ['WORLD', 'BOTH']
 
-        row = col.split(factor=0.45)
-        row.operator("machin3.toggle_cavity", text="Cavity Toggle")
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_cavity", text="Cavity", depress=hascavity)
         r = row.row(align=True)
-        # r.prop(view.shading, "cavity_ridge_factor", text="")
-
-        r.active = view.shading.show_cavity and view.shading.cavity_type in ['WORLD', 'BOTH']
+        r.active = hascavity
         r.prop(view.shading, "cavity_valley_factor", text="")
         r.prop(context.scene.display, "matcap_ssao_distance", text="")
 
         # curvature
+        hascurvature = view.shading.show_cavity and view.shading.cavity_type in ['SCREEN', 'BOTH']
 
-        row = col.split(factor=0.45)
-        row.operator("machin3.toggle_curvature", text="(V) Curvature Toggle")
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_curvature", text="(V) Curvature", depress=hascurvature)
         r = row.row(align=True)
-        r.active = view.shading.show_cavity and view.shading.cavity_type in ['SCREEN', 'BOTH']
+        r.active = hascurvature
         r.prop(view.shading, "curvature_ridge_factor", text="")
         r.prop(view.shading, "curvature_valley_factor", text="")
 
-        # object axes
+    def draw_object_box(self, active, view, layout):
+        overlay = view.overlay
+        shading = view.shading
 
-        row = col.split(factor=0.45)
-        row.operator("machin3.toggle_object_axes", text="(E) Object Axes Toggle")
-        r = row.row(align=True)
-        r.active = True if bpy.app.driver_namespace.get('draw_object_axes') else False
-        r.prop(context.scene.M3, "object_axes_size", text="")
-        r.prop(context.scene.M3, "object_axes_alpha", text="")
+        column = layout.column(align=True)
 
-        active = context.active_object
-        if active:
-            if active.type == "MESH":
-                mesh = active.data
+        row = column.row()
+        row = column.split(factor=0.6)
+        row.prop(active, "name", text="")
 
-                col.separator()
-                row = col.split(factor=0.55)
-                r = row.split().row(align=True)
-                r.operator("machin3.shade_smooth", text="Smooth", icon_value=get_icon('smooth'))
-                r.operator("machin3.shade_flat", text="Flat", icon_value=get_icon('flat'))
-
-                icon = "CHECKBOX_HLT" if mesh.use_auto_smooth else "CHECKBOX_DEHLT"
-                row.operator("machin3.toggle_auto_smooth", text="AutoSmooth", icon=icon).angle = 0
-
-                row = col.split(factor=0.55)
-                r = row.row(align=True)
-                r.active = not mesh.has_custom_normals
-                for angle in [30, 60, 90, 180]:
-                    r.operator("machin3.toggle_auto_smooth", text=str(angle)).angle = angle
-
-                r = row.row()
-                r.active = not mesh.has_custom_normals and mesh.use_auto_smooth
-                r.prop(mesh, "auto_smooth_angle")
-
-                if mesh.use_auto_smooth:
-                    if mesh.has_custom_normals:
-                        col.operator("mesh.customdata_custom_splitnormals_clear", text="Clear Custom Normals")
-
-                if context.mode == "EDIT_MESH":
-                    row = col.row(align=True)
-                    row.prop(view.overlay, "show_vertex_normals", text="", icon='NORMALS_VERTEX')
-                    row.prop(view.overlay, "show_split_normals", text="", icon='NORMALS_VERTEX_FACE')
-                    row.prop(view.overlay, "show_face_normals", text="", icon='NORMALS_FACE')
-
-                    r = row.row(align=True)
-                    r.active = view.overlay.show_vertex_normals or view.overlay.show_face_normals or view.overlay.show_split_normals
-                    r.prop(view.overlay, "normals_length", text="Size")
-
-
-        if context.mode == "EDIT_MESH":
-            col.separator()
-            # row = col.row()
-            # row.prop(mesh, "show_edges", text="Edges")
-            # row.prop(mesh, "show_faces", text="Faces")
-
-            row = col.row(align=True)
-            row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
-            row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
-            row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
-            row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
-
-            if not bpy.app.build_options.freestyle:
-                row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
-
-    def draw_center_column(self, context, view, col):
-        row = col.split(factor=0.42)
-        row.prop(view.overlay, "show_cursor", text="3D Cursor")
-        r = row.split().row(align=True)
-        r.prop(view.overlay, "show_object_origins", text="Origins")
-        r.prop(view.overlay, "show_object_origins_all", text="All")
-
-        col.separator()
-        row = col.row()
-        row.prop(view.shading, "show_backface_culling")
-        row.prop(view.overlay, "show_face_orientation")
-
-        row = col.row()
-        row.prop(view.overlay, "show_relationship_lines")
-        if context.mode == 'EDIT_MESH':
-            row.prop(view.overlay, "show_extra_indices")
-
-        active = context.active_object
-
-        if active:
-            col.separator()
-
-            row = col.row()
-            row.prop(active, "name", text="")
+        if active.type == 'ARMATURE':
+            row.prop(active.data, "display_type", text="")
+        else:
             row.prop(active, "display_type", text="")
 
-            row = col.row()
-            row.prop(active, "show_name", text="Name")
-            row.prop(active, "show_axis", text="Axis")
-            row.prop(active, "show_in_front", text="In Front")
-            row.prop(active, "color", text="")
+        if overlay.show_overlays and shading.type == 'SOLID':
+            row = column.split(factor=0.6)
+            r = row.row(align=True)
+            r.prop(active, "show_name", text="Name")
 
-    def draw_right_column(self, context, view, col):
+            if active.type == 'ARMATURE':
+                r.prop(active.data, "show_axes", text="Axes")
+            else:
+                r.prop(active, "show_axis", text="Axis")
+
+            r = row.row()
+            r.prop(active, "show_in_front", text="In Front")
+            if shading.color_type == 'OBJECT':
+                r.prop(active, "color", text="")
+
+        elif overlay.show_overlays:
+            row = column.split(factor=0.6)
+            row.prop(active, "show_name", text="Name")
+
+            if active.type == 'ARMATURE':
+                row.prop(active.data, "show_axes", text="Axes")
+            else:
+                row.prop(active, "show_axis", text="Axis")
+
+        elif shading.type == 'SOLID':
+            if shading.color_type == 'OBJECT':
+                row = column.split(factor=0.5)
+                row.prop(active, "show_in_front", text="In Front")
+                row.prop(active, "color", text="")
+
+            else:
+                row = column.row()
+                row.prop(active, "show_in_front", text="In Front")
+
+
+        if active.type == "MESH":
+            mesh = active.data
+
+            column.separator()
+            row = column.split(factor=0.55, align=True)
+            r = row.row(align=True)
+            r.operator("machin3.shade_smooth", text="Smooth", icon_value=get_icon('smooth'))
+            r.operator("machin3.shade_flat", text="Flat", icon_value=get_icon('flat'))
+
+            icon = "CHECKBOX_HLT" if mesh.use_auto_smooth else "CHECKBOX_DEHLT"
+            row.operator("machin3.toggle_auto_smooth", text="AutoSmooth", icon=icon).angle = 0
+
+            row = column.split(factor=0.55, align=True)
+            r = row.row(align=True)
+            r.active = not mesh.has_custom_normals
+            for angle in [30, 60, 90, 180]:
+                r.operator("machin3.toggle_auto_smooth", text=str(angle)).angle = angle
+
+            r = row.row(align=True)
+            r.active = not mesh.has_custom_normals and mesh.use_auto_smooth
+            r.prop(mesh, "auto_smooth_angle")
+
+            if mesh.use_auto_smooth:
+                if mesh.has_custom_normals:
+                    column.operator("mesh.customdata_custom_splitnormals_clear", text="Clear Custom Normals")
+
+            if active.mode == 'EDIT' and view.overlay.show_overlays:
+                column.separator()
+
+                row = column.split(factor=0.25, align=True)
+                row.label(text='Normals')
+                row.prop(view.overlay, "show_vertex_normals", text="", icon='NORMALS_VERTEX')
+                row.prop(view.overlay, "show_split_normals", text="", icon='NORMALS_VERTEX_FACE')
+                row.prop(view.overlay, "show_face_normals", text="", icon='NORMALS_FACE')
+
+                r = row.row(align=True)
+                r.active = any([view.overlay.show_vertex_normals, view.overlay.show_face_normals, view.overlay.show_split_normals])
+                r.prop(view.overlay, "normals_length", text="Size")
+
+                row = column.split(factor=0.25, align=True)
+                row.label(text='Edges')
+                row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
+                row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
+                row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
+                row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
+                # row.prop(view.overlay, "show_freestyle_edge_marks", text="Freestyle", toggle=True)
+
+    def draw_shade_box(self, context, view, layout):
+        column = layout.column(align=True)
+
+        # SOLID
+
         if view.shading.type == "SOLID":
 
             # light type
-            row = col.row(align=True)
+            row = column.row(align=True)
             # row.scale_y = 1.5
             row.prop(view.shading, "light", expand=True)
 
             # studio / matcap selection
             if view.shading.light in ["STUDIO", "MATCAP"]:
-                row = col.row()
+                row = column.row()
                 row.template_icon_view(view.shading, "studio_light", show_labels=True, scale=4, scale_popup=3)
 
             # studio rotation, same as world rotation in lookdev
             if view.shading.light == "STUDIO":
-                col.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                row = column.split(factor=0.3, align=True)
+                row.prop(view.shading, "use_world_space_lighting", text='World Space', icon='WORLD')
+                r = row.row(align=True)
+                r.active = view.shading.use_world_space_lighting
+                r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
             # switch matcap
             if view.shading.light == "MATCAP":
-                row = col.row()
+                row = column.row(align=True)
                 row.operator("machin3.matcap_switch", text="(X) Matcap Switch")
                 row.operator('view3d.toggle_matcap_flip', text="Matcap Flip", icon='ARROW_LEFTRIGHT')
 
             # color type
-            row = col.row(align=True)
+            row = column.row(align=True)
             row.prop(view.shading, "color_type", expand=True)
 
             # single color
             if view.shading.color_type == 'SINGLE':
-                col.prop(view.shading, "single_color", text="")
+                column.prop(view.shading, "single_color", text="")
 
             elif view.shading.color_type == 'MATERIAL':
-                col.operator("machin3.colorize_materials", text='Colorize Materials', icon='MATERIAL')
+                column.operator("machin3.colorize_materials", text='Colorize Materials', icon='MATERIAL')
 
             elif view.shading.color_type == 'OBJECT':
-                r = col.split(factor=0.12, align=True)
+                r = column.split(factor=0.12, align=True)
                 r.label(text="from")
                 r.operator("machin3.colorize_objects_from_active", text='Active', icon='OBJECT_DATA')
                 r.operator("machin3.colorize_objects_from_materials", text='Material', icon='MATERIAL')
                 r.operator("machin3.colorize_objects_from_collections", text='Collection', icon='OUTLINER_OB_GROUP_INSTANCE')
 
-        elif view.shading.type == "MATERIAL":
+
+        # WIREFRAME
+
+        elif view.shading.type == "WIREFRAME":
+            row = column.row()
+            # # TODO: make the whoe scene toggle an op called by pressing X
+            row.prop(view.shading, "show_xray_wireframe", text="")
+            row.prop(view.shading, "xray_alpha_wireframe", text="X-Ray")
+
+            # wireframe color type
+            row = column.row(align=True)
+            row.prop(view.shading, "wireframe_color_type", expand=True)
+
+
+        # LOOKDEV and RENDERED
+
+        elif view.shading.type in ['MATERIAL', 'RENDERED']:
+
+            if view.shading.type == 'RENDERED':
+                row = column.split(factor=0.3, align=True)
+                row.scale_y = 1.2
+                row.label(text='Engine')
+                row.prop(context.scene.M3, 'render_engine', expand=True)
+                column.separator()
+
 
             # use scene lights and world
             studio_worlds = [w for w in context.preferences.studio_lights if os.path.basename(os.path.dirname(w.path)) == "world"]
 
             if any([bpy.data.lights, studio_worlds]):
-                row = col.row()
+                row = column.row(align=True)
+
                 if bpy.data.lights:
-                    row.prop(view.shading, "use_scene_lights")
+                    if view.shading.type == 'MATERIAL':
+                        row.prop(view.shading, "use_scene_lights")
+
+                    elif view.shading.type == 'RENDERED':
+                        row.prop(view.shading, "use_scene_lights_render")
 
                 if studio_worlds:
-                    row.prop(view.shading, "use_scene_world")
+                    if view.shading.type == 'MATERIAL':
+                        row.prop(view.shading, "use_scene_world")
+                    elif view.shading.type == 'RENDERED':
+                        row.prop(view.shading, "use_scene_world_render")
+
 
                     # world hdri selection and manipulation
-                    if not view.shading.use_scene_world:
-                            row = col.row()
-                            row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
+                    if (view.shading.type == 'MATERIAL' and not view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and not view.shading.use_scene_world_render):
+                        row = column.row(align=True)
+                        row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
 
-                            col.prop(view.shading, "studiolight_rotate_z", text="Rotation")
-                            col.prop(view.shading, "studiolight_background_alpha")
+                        if (view.shading.type == 'MATERIAL' or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE')) and view.shading.studiolight_background_alpha:
+                            r = column.split(factor=0.5, align=True)
+                            r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                            r.prop(view.shading, "studiolight_background_blur")
+                        else:
+                            column.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+
+                        r = column.split(factor=0.5, align=True)
+                        r.prop(view.shading, "studiolight_intensity")
+                        r.prop(view.shading, "studiolight_background_alpha")
+
 
             # world background node props
 
-            if view.shading.use_scene_world or not studio_worlds:
+            if not studio_worlds or (view.shading.type == 'MATERIAL' and view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and view.shading.use_scene_world_render):
                 world = context.scene.world
                 if world:
                     if world.use_nodes:
@@ -989,40 +1115,20 @@ class PieShading(Menu):
                                         strength = node.inputs['Strength']
 
                                         if color.links:
-                                            col.prop(strength, "default_value", text="Background Strength")
+                                            column.prop(strength, "default_value", text="Background Strength")
                                         else:
-                                            row = col.split(factor=0.7)
+                                            row = column.split(factor=0.7, align=True)
                                             row.prop(strength, "default_value", text="Background Strength")
                                             row.prop(color, "default_value", text="")
 
-                                        col.separator()
+            if view.shading.type == 'RENDERED':
+                column.prop(context.scene.render, 'film_transparent')
 
-
-        elif view.shading.type == "RENDERED":
-            col.prop(context.scene.render, "engine")
-
-            if context.scene.render.engine == "CYCLES":
-                col.label(text='TODO: render setting presets')
-                col.label(text='TODO: pack images op?')
-
-            if context.scene.render.engine == "BLENDER_EEVEE":
-                self.draw_eevee(context, view, col)
-
-
-        elif view.shading.type == "WIREFRAME":
-            row = col.row()
-            # # TODO: make the whoe scene toggle an op called by pressing X
-            row.prop(view.shading, "show_xray_wireframe", text="")
-            row.prop(view.shading, "xray_alpha_wireframe", text="X-Ray")
-
-            # wireframe color type
-            row = col.row(align=True)
-            row.prop(view.shading, "wireframe_color_type", expand=True)
-
-    def draw_eevee(self, context, view, layout):
-        column = layout.column()
+    def draw_eevee_box(self, context, view, layout):
+        column = layout.column(align=True)
 
         row = column.row(align=True)
+        row.label(text='Eevee Settings')
         row.prop(context.scene.M3, "eevee_preset", expand=True)
 
         # SSR
@@ -1078,16 +1184,44 @@ class PieShading(Menu):
             row.prop(context.scene.eevee, "volumetric_start")
             row.prop(context.scene.eevee, "volumetric_end")
 
+            row = col.split(factor=0.4, align=True)
+            row.prop(context.scene.eevee, "volumetric_tile_size", text='')
+            row.prop(context.scene.eevee, "volumetric_samples")
+
+            if context.scene.eevee.use_volumetric_shadows:
+                row = col.split(factor=0.4, align=True)
+            else:
+                row = col.row(align=True)
+
+            row.prop(context.scene.eevee, "use_volumetric_shadows", text='Shadows')
+            if context.scene.eevee.use_volumetric_shadows:
+                row.prop(context.scene.eevee, "volumetric_shadow_samples", text='Samples')
+
+    def draw_cycles_box(self, context, view, layout):
+        column = layout.column(align=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.label(text='Cycles Settings')
+        row.prop(context.scene.M3, 'cycles_device', expand=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(context.scene.cycles, 'use_adaptive_sampling', text='Adaptive')
+        row.prop(context.scene.cycles, 'seed')
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(context.scene.cycles, 'preview_samples', text='Viewport')
+        row.prop(context.scene.cycles, 'samples', text='Render')
+
     def get_text_icon(self, context, shading):
         if context.space_data.shading.type == shading:
-            text = "Toggle Overlays"
+            text = "Overlays"
             icon = "OVERLAY"
         else:
             if shading == "SOLID":
                 text = "Solid"
                 icon = "SHADING_SOLID"
             elif shading == "MATERIAL":
-                text = "LookDev"
+                text = "Material"
                 icon = "SHADING_TEXTURE"
             elif shading == "RENDERED":
                 text = "Rendered"
@@ -1099,9 +1233,9 @@ class PieShading(Menu):
         return text, icon
 
 
-class PieViews(Menu):
-    bl_idname = "MACHIN3_MT_views_pie"
-    bl_label = "Views and Cams"
+class PieViewport(Menu):
+    bl_idname = "MACHIN3_MT_viewport_pie"
+    bl_label = "Viewport and Cameras"
 
     def draw(self, context):
         layout = self.layout
@@ -1709,7 +1843,7 @@ class PieTransform(Menu):
         # 2 - BOTTOM
         op = pie.operator('machin3.set_transform_preset', text='Active')
         op.pivot = 'ACTIVE_ELEMENT'
-        op.orientation = 'NORMAL' if context.mode == 'EDIT_MESH' else 'LOCAL'
+        op.orientation = 'NORMAL' if context.mode in ['EDIT_MESH', 'EDIT_ARMATURE'] else 'LOCAL'
 
         # 8 - TOP
 
@@ -1738,7 +1872,7 @@ class PieTransform(Menu):
         # 1 - BOTTOM - LEFT
         op = pie.operator('machin3.set_transform_preset', text='Individual')
         op.pivot = 'INDIVIDUAL_ORIGINS'
-        op.orientation = 'NORMAL' if context.mode == 'EDIT_MESH' else 'LOCAL'
+        op.orientation = 'NORMAL' if context.mode in ['EDIT_MESH', 'EDIT_ARMATURE'] else 'LOCAL'
 
         # 3 - BOTTOM - RIGHT
         op = pie.operator('machin3.set_transform_preset', text='Cursor')
@@ -2190,4 +2324,5 @@ class PieWorkspace(Menu):
         pie.separator()
 
         # 3 - BOTTOM - RIGHT
-        pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
+        # pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
+        pie.separator()

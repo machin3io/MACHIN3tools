@@ -10,7 +10,7 @@ from ... utils.material import get_last_node, lighten_color
 class ColorizeMaterials(bpy.types.Operator):
     bl_idname = "machin3.colorize_materials"
     bl_label = "MACHIN3: Colorize Materials"
-    descriptino = "Set Material Viewport Colors from last Node in Materials"
+    bl_description = "Set Material Viewport Colors from last Node in Material"
     bl_options = {'REGISTER', 'UNDO'}
 
     lighten_amount: FloatProperty(name="Lighten", default=0.05, min=0, max=1)

@@ -175,6 +175,11 @@ class Focus(bpy.types.Operator):
 
             # initialize local view
             elif context.selected_objects:
+
+                # if you are not in local view, and yet there is a history, clear it
+                if history:
+                    history.clear()
+
                 self.show_tool_props = True
                 focus(context, view, sel, history, init=True)
 

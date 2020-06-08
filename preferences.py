@@ -185,10 +185,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
 
     custom_startup: BoolProperty(name="Startup Scene", default=True)
-    custom_workspaces: BoolProperty(name="Workspaces", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
-    custom_matcaps: BoolProperty(name="Matcaps and Default Shading", default=True)
+    custom_matcaps: BoolProperty(name="Matcaps", default=True)
+    custom_shading: BoolProperty(name="Shading", default=True)
     custom_overlays: BoolProperty(name="Overlays", default=True)
+    custom_outliner: BoolProperty(name="Outliner", default=True)
     custom_preferences_interface: BoolProperty(name="Preferences: Interface", default=True)
     custom_preferences_viewport: BoolProperty(name="Preferences: Viewport", default=True)
     custom_preferences_navigation: BoolProperty(name="Preferences: Navigation", default=True)
@@ -411,11 +412,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bbb.column()
 
             row = column.row()
-            row.prop(self, "custom_startup")
-            row.prop(self, "custom_workspaces")
             row.prop(self, "custom_theme")
             row.prop(self, "custom_matcaps")
+            row.prop(self, "custom_shading")
+
+            row = column.row()
             row.prop(self, "custom_overlays")
+            row.prop(self, "custom_outliner")
+            row.prop(self, "custom_startup")
 
             bbb = bb.box()
             column = bbb.column()
@@ -579,10 +583,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         return drawn
 
     def draw_keymap_items(self, kc, name, keylist, layout):
-        drawn = False
+        drawn = []
 
-        for idx, item in enumerate(keylist):
+        # index keeping track of SUCCESSFULL kmi iterations
+        idx = 0
+
+        for item in keylist:
             keymap = item.get("keymap")
+            isdrawn = False
 
             if keymap:
                 km = kc.keymaps.get(keymap)
@@ -607,7 +615,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                 # draw keymap item
 
                 if kmi:
-                    # multi kmi tools, will only have a single box, created for the first kmi
+                    # multi kmi tools, will share a single box, created for the first kmi
                     if idx == 0:
                         box = layout.box()
 
@@ -628,5 +636,15 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                     # layout.context_pointer_set("keymap", km)
                     rna_keymap_ui.draw_kmi(["ADDON", "USER", "DEFAULT"], kc, km, kmi, row, 0)
 
-                    drawn = True
+                    # draw info, if available
+                    infos = item.get("info", [])
+                    for text in infos:
+                        row = box.split(factor=0.15)
+                        row.separator()
+                        row.label(text=text, icon="INFO")
+
+                    isdrawn = True
+                    idx += 1
+
+            drawn.append(isdrawn)
         return drawn

@@ -1,7 +1,8 @@
 import bpy
 from bpy.props import StringProperty, IntProperty, BoolProperty, CollectionProperty, PointerProperty, EnumProperty, FloatProperty
 import bmesh
-from . items import eevee_preset_items, align_mode_items
+from . utils.world import get_world_output
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items
 
 
 # COLLECTIONS
@@ -147,6 +148,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             shading.use_scene_lights = False
             shading.use_scene_world = False
 
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = False
+                shading.use_scene_world_render = False
+
         elif self.eevee_preset == 'LOW':
             eevee.use_ssr = True
             eevee.use_ssr_halfres = True
@@ -157,6 +162,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
             shading.use_scene_lights = True
             shading.use_scene_world = False
+
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+                shading.use_scene_world_render = False
 
         elif self.eevee_preset == 'HIGH':
             eevee.use_ssr = True
@@ -169,6 +178,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             shading.use_scene_lights = True
             shading.use_scene_world = False
 
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+                shading.use_scene_world_render = False
+
         elif self.eevee_preset == 'ULTRA':
             eevee.use_ssr = True
             eevee.use_ssr_halfres = False
@@ -178,7 +191,28 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_volumetric_lights = True
 
             shading.use_scene_lights = True
-            shading.use_scene_world = True
+
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+
+            world = context.scene.world
+            if world:
+                shading.use_scene_world = True
+
+                if context.scene.render.engine == 'BLENDER_EEVEE':
+                    shading.use_scene_world_render = True
+
+                output = get_world_output(world)
+                links = output.inputs[1].links
+
+                if not links:
+                    tree = world.node_tree
+
+                    volume = tree.nodes.new('ShaderNodeVolumePrincipled')
+                    tree.links.new(volume.outputs[0], output.inputs[1])
+
+                    volume.inputs[2].default_value = 0.1
+                    volume.location = (-200, 200)
 
     def update_eevee_gtao_factor(self, context):
         context.scene.eevee.gtao_factor = self.eevee_gtao_factor
@@ -186,11 +220,31 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     def update_eevee_bloom_intensity(self, context):
         context.scene.eevee.bloom_intensity = self.eevee_bloom_intensity
 
+    def update_render_engine(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        context.scene.render.engine = self.render_engine
+
+    def update_cycles_device(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        context.scene.cycles.device = self.cycles_device
+
+
     eevee_preset: EnumProperty(name="Eevee Preset", description="Eevee Quality Presets", items=eevee_preset_items, default='NONE', update=update_eevee_preset)
     eevee_gtao_factor: FloatProperty(name="Factor", default=1, min=0, step=0.1, update=update_eevee_gtao_factor)
     eevee_bloom_intensity: FloatProperty(name="Intensity", default=0.05, min=0, step=0.1, update=update_eevee_bloom_intensity)
+
+    render_engine: EnumProperty(name="Render Engine", description="Render Engine", items=render_engine_items, default='BLENDER_EEVEE', update=update_render_engine)
+    cycles_device: EnumProperty(name="Render Device", description="Render Device", items=cycles_device_items, default='CPU', update=update_cycles_device)
 
     object_axes_size: FloatProperty(name="Object Axes Size", default=0.3, min=0)
     object_axes_alpha: FloatProperty(name="Object Axes Alpha", default=0.75, min=0, max=1)
 
     align_mode: EnumProperty(name="Align Mode", items=align_mode_items, default="VIEW")
+
+    avoid_update: BoolProperty()

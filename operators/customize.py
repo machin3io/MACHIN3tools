@@ -8,16 +8,13 @@ from .. utils.system import makedir
 
 # TODO: do the prefs part based on a dictionary?
 
-# TODO: deactivate shift y/z wire toggle
-
-
 class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"
     bl_label = "MACHIN3: Customize"
     bl_description = "Customize various Blender preferences, settings and keymaps."
     bl_options = {'INTERNAL'}
 
-    def execute(self, context):
+    def invoke(self, context, event):
         scriptspath = bpy.utils.user_resource('SCRIPTS')
         datafilespath = bpy.utils.user_resource('DATAFILES')
 
@@ -30,21 +27,31 @@ class Customize(bpy.types.Operator):
         if get_prefs().custom_theme:
             self.theme(scriptspath, resourcespath)
 
-        # MATCAPS + DEFAULT SHADING
+        # MATCAPS
         if get_prefs().custom_matcaps:
             self.matcaps(context, resourcespath, datafilespath)
+
+        # SHADING
+        if get_prefs().custom_shading:
+            self.shading(context)
 
         # OVERLAYS
         if get_prefs().custom_overlays:
             self.overlays(context)
 
-        # WORKSPACES
-        if get_prefs().custom_workspaces:
-            self.workspaces(context)
+        # OUTLINER
+        if get_prefs().custom_outliner:
+            self.outliner(context)
 
         # STARTUP SCENE
         if get_prefs().custom_startup:
             self.startup(context)
+
+        # HIDDEN
+        if event.alt:
+            self.workspaces(context)
+
+            self.bookmarks(context)
 
         return {'FINISHED'}
 
@@ -506,21 +513,14 @@ class Customize(bpy.types.Operator):
             f.save_version = 3
             f.recent_files = 20
 
-    def overlays(self, context):
-        print("\n» Modifying Overlays")
+    def theme(self, scriptspath, resourcespath):
+        print("\n» Installing and Enabling M3 theme")
 
-        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
+        themesourcepath = os.path.join(resourcespath, "theme", "m3.xml")
+        themetargetpath = makedir(os.path.join(scriptspath, "presets", "interface_theme"))
 
-        for area in areas:
-            overlay = area.spaces[0].overlay
-            shading = area.spaces[0].shading
-
-            overlay.show_face_center = True
-            overlay.wireframe_threshold = 0.99
-
-            shading.show_backface_culling = True
-
-            overlay.vertex_opacity = 1
+        filepath = shutil.copy(themesourcepath, themetargetpath)
+        bpy.ops.script.execute_preset(filepath=filepath, menu_idname="USERPREF_MT_interface_theme_presets")
 
     def matcaps(self, context, resourcespath, datafilespath):
         print("\n» Adding Matcaps")
@@ -540,36 +540,71 @@ class Customize(bpy.types.Operator):
             get_prefs().switchmatcap1 = "matcap_base.exr"
             get_prefs().switchmatcap2 = "matcap_shiny_red.exr"
 
+    def shading(self, context):
+        print("\n» Setting up Shading and Rendering")
 
-            print("\n» Setting up Viewport Shading")
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
 
-            ws = context.workspace
+        for area in areas:
+            shading = area.spaces[0].shading
 
-            shading = False
-            for screen in ws.screens:
-                if not shading:
-                    for area in screen.areas:
-                        if area.type == "VIEW_3D":
-                            shading = area.spaces[0].shading
+            shading.type = "SOLID"
+            shading.light = "MATCAP"
+            shading.color_type = "SINGLE"
+            shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
-            if shading:
-                shading.type = "SOLID"
-                shading.light = "MATCAP"
+            if 'matcap_base.exr' in context.preferences.studio_lights:
                 shading.studio_light = "matcap_base.exr"
-                shading.color_type = "SINGLE"
-                shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
-                shading.cavity_ridge_factor = 0
-                shading.cavity_valley_factor = 2
+            shading.studiolight_background_alpha = 1
+            shading.studiolight_background_blur = 1
 
-    def theme(self, scriptspath, resourcespath):
-        print("\n» Installing and Enabling M3 theme")
+            shading.cavity_ridge_factor = 0
+            shading.cavity_valley_factor = 2
 
-        themesourcepath = os.path.join(resourcespath, "theme", "m3.xml")
-        themetargetpath = makedir(os.path.join(scriptspath, "presets", "interface_theme"))
+            shading.show_backface_culling = True
 
-        filepath = shutil.copy(themesourcepath, themetargetpath)
-        bpy.ops.script.execute_preset(filepath=filepath, menu_idname="USERPREF_MT_interface_theme_presets")
+            # mimic LOW eevee preset
+            shading.use_scene_lights = True
+            shading.use_scene_lights_render = True
+            shading.use_scene_world_render = False
+
+            eevee = context.scene.eevee
+
+            eevee.use_ssr = True
+            eevee.use_gtao = True
+            eevee.use_volumetric_lights = False
+
+            context.scene.render.engine = 'CYCLES'
+            context.scene.cycles.device = 'GPU'
+
+    def overlays(self, context):
+        print("\n» Modifying Overlays")
+
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
+
+        for area in areas:
+            overlay = area.spaces[0].overlay
+
+            overlay.show_face_center = True
+            overlay.show_relationship_lines = False
+
+            overlay.wireframe_threshold = 0.99
+            overlay.vertex_opacity = 1
+
+    def outliner(self, context):
+        print("\n» Modifying Outliner")
+
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "OUTLINER"]
+
+        for area in areas:
+            space = area.spaces[0]
+
+            space.use_filter_children = False
+
+            space.show_restrict_column_select = True
+            space.show_restrict_column_viewport = True
+            space.show_restrict_column_render = True
 
     def startup(self, context):
         print("\n» Modifying Startup Scene")
@@ -598,11 +633,14 @@ class Customize(bpy.types.Operator):
                         if space.type == 'VIEW_3D':
                             r3d = space.region_3d
 
-                            r3d.view_matrix = Matrix(((1,  0.0, 0.0,   0),
-                                                      (0,  0.2, 1.0,  -1),
-                                                      (0, -1.0, 0.2, -10),
-                                                      (0,  0.0, 0.0,   1)))
+                            r3d.view_matrix = Matrix(((1, 0, 0, 0),
+                                                      (0, 0.2, 1, -1),
+                                                      (0, -1, 0.2, -10),
+                                                      (0, 0, 0, 1)))
 
+                            space.show_region_toolbar = False
+
+                            return
 
     def workspaces(self, context):
         print("\n» Modifying Workspaces")
@@ -613,7 +651,6 @@ class Customize(bpy.types.Operator):
 
         # name the basic 3d workspace
         bpy.data.workspaces[-1].name = "General"
-
 
         # remove the dope sheet editor
         screens = [screen for screen in context.workspace.screens if screen.name == 'Layout']
@@ -636,18 +673,45 @@ class Customize(bpy.types.Operator):
                     bpy.ops.screen.area_join(override, cursor=(area.x, area.y + area.height))
                     # print(ret)
 
-                """ TODO: for some reason the workspaces won't end up in the correct order, but rather sorted alphabetically
-                names = ['General.alt', 'Uvs', 'UVs.alt', 'Material', 'World', 'Scripting']
+                # TODO: whatever I try, I can't get them sorted properly, not even with the reorder op
+                # ####: also, running this will turn the prefs into a 3d view for some reason
+
+                names = ['General.alt', 'UVs', 'UVs.alt', 'Material', 'World', 'Scripting']
 
                 for idx, name in enumerate(names):
                     bpy.ops.workspace.duplicate(override)
 
                 for name, ws in zip(names, bpy.data.workspaces[1:]):
-                    print("renaming", ws.name, "to", name)
                     ws.name = name
-                """
 
+                return
 
+    def bookmarks(self, context):
+        print("\n» Modifying Bookmarks")
+
+        # NOTE: unfortunately it requires a Blender restart before the new bookmarks are read
+        # ####: trying to run the fielbrowser cleanup op in an attempt to force an update, has no effect either
+
+        path = bpy.utils.user_resource('CONFIG', "bookmarks.txt")
+
+        lines = ['[Bookmarks]',
+                 '!Archive',
+                 '/home/x/Archive/blender',
+                 '!TEMP',
+                 '/home/x/TEMP/blender',
+                 '!Addons',
+                 '/home/x/TEMP/blender/Addons',
+                 '!Output',
+                 '/home/x/TEMP/blender/Output',
+                 '[Recent]',
+                 '!DECALmachine',
+                 '/home/x/TEMP/blender/Addons/DECALmachine',
+                 '!MESHmachine',
+                 '/home/x/TEMP/blender/Addons/MESHmachine',
+                 ]
+
+        with open(path, mode='w') as f:
+            f.write('\n'.join(lines))
 
 
 class RestoreKeymaps(bpy.types.Operator):
