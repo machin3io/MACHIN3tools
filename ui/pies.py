@@ -856,6 +856,16 @@ class PieShading(Menu):
         r.prop(context.scene.M3, "object_axes_size", text="")
         r.prop(context.scene.M3, "object_axes_alpha", text="")
 
+        column.separator()
+
+        # camera clipping
+        row = column.split(factor=0.4, align=True)
+        row.label(text='Camera Clipping')
+        r = row.row(align=True)
+        r.active = True
+        r.prop(view, "clip_start", text="")
+        r.prop(view, "clip_end", text="")
+
     def draw_solid_box(self, context, view, layout):
         shading = context.space_data.shading
 
